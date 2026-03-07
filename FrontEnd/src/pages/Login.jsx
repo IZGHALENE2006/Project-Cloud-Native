@@ -1,36 +1,38 @@
 import { useState } from "react";
-import api from "../api/axios";
 import AuthLayout from "../components/AuthLayout";
+import { Loginuser } from "../slices/auth";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+    const {loading,error} = useSelector((state)=>{return state.auth})
+  const Dispatch = useDispatch()
+  const navigate = useNavigate()
+  const [Error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    try {
-      await api.post("/api/auth/login", formData);
-      setSuccess("Data sent successfully.");
-    } catch (err) {
-      const message = err.response?.data?.message || "Failed to send data.";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+
+
+  try {
+    await Dispatch(Loginuser(formData)).unwrap();
+alert("ok")
+  } catch (err) {
+    const message = err?.message || "Failed to send data.";
+    setError(message);
+  }
+};
 
   return (
     <AuthLayout
@@ -64,7 +66,6 @@ function Login() {
         />
 
         {error && <p className="message error">{error}</p>}
-        {success && <p className="message success">{success}</p>}
 
         <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Login"}

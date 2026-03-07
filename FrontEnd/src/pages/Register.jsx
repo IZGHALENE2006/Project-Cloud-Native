@@ -1,49 +1,49 @@
 import { useState } from "react";
-import api from "../api/axios";
 import AuthLayout from "../components/AuthLayout";
+import { useDispatch, useSelector } from "react-redux";
+import { RejisterUser } from "../slices/auth";
+import { useNavigate } from 'react-router-dom';
 
 function Register() {
   const [formData, setFormData] = useState({
     agencyName: "",
     managerName: "",
     email: "",
-    phone: "",
+    phoneNumber: "",
     address: "",
     city: "",
     password: "",
     confirmPassword: "",
   });
+  // Dispatch
+  const Dispatch = useDispatch()
+const navigate = useNavigate()
+  const {loading,error} = useSelector((state)=>{return state.auth})
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [Error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+  if (formData.password !== formData.confirmPassword) {
+    setError("Passwords do not match.");
+    return;
+  }
 
-    setLoading(true);
 
-    try {
-      await api.post("/api/auth/register", formData);
-      setSuccess("Data sent successfully.");
-    } catch (err) {
-      const message = err.response?.data?.message || "Failed to send data.";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    await Dispatch(RejisterUser(formData)).unwrap();
+     navigate('login')   
+  } catch (err) {
+    const message = err?.message || "Failed to send data.";
+    setError(message);
+  }
+};
 
   return (
     <AuthLayout
@@ -62,7 +62,6 @@ function Register() {
           value={formData.agencyName}
           onChange={handleChange}
           placeholder="Enter agency name"
-          required
         />
 
         <label htmlFor="managerName">Manager Name</label>
@@ -73,7 +72,7 @@ function Register() {
           value={formData.managerName}
           onChange={handleChange}
           placeholder="Enter manager name"
-          required
+          
         />
 
         <label htmlFor="email">Email</label>
@@ -84,18 +83,18 @@ function Register() {
           value={formData.email}
           onChange={handleChange}
           placeholder="Enter email"
-          required
+          
         />
 
         <label htmlFor="phone">Phone Number</label>
         <input
           id="phone"
-          name="phone"
+          name="phoneNumber"
           type="tel"
-          value={formData.phone}
+          value={formData.phoneNumber}
           onChange={handleChange}
           placeholder="Enter phone number"
-          required
+          
         />
 
         <label htmlFor="address">Address</label>
@@ -117,7 +116,7 @@ function Register() {
           value={formData.city}
           onChange={handleChange}
           placeholder="Enter city"
-          required
+          
         />
 
         <label htmlFor="password">Password</label>
@@ -128,7 +127,7 @@ function Register() {
           value={formData.password}
           onChange={handleChange}
           placeholder="Create password"
-          required
+          
         />
 
         <label htmlFor="confirmPassword">Confirm Password</label>
@@ -139,11 +138,10 @@ function Register() {
           value={formData.confirmPassword}
           onChange={handleChange}
           placeholder="Confirm password"
-          required
+          
         />
 
         {error && <p className="message error">{error}</p>}
-        {success && <p className="message success">{success}</p>}
 
         <button type="submit" disabled={loading}>
           {loading ? "Registering..." : "Register"}
