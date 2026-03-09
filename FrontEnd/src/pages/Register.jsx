@@ -105,7 +105,7 @@ const handleSubmit = async (e) => {
           value={formData.address}
           onChange={handleChange}
           placeholder="Enter address"
-          required
+          
         />
 
         <label htmlFor="city">City</label>
