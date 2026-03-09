@@ -1,25 +1,27 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 function Sidebar() {
-  const links = ["Dashboard", "Cars", "Users", "Rentals", "Logout"];
+  const links = [
+    { label: "Dashboard", to: "/dashboard" },
+    { label: "Cars", to: "/cars/add" },
+    { label: "Users", to: "#" },
+    { label: "Rentals", to: "#" },
+    { label: "Logout", to: "/logout" },
+  ];
 
   return (
     <aside className="dashboard-sidebar">
       <h2>CarRent Pro</h2>
       <nav>
         {links.map((link) =>
-          link === "Dashboard" ? (
-            <a key={link} href="#" className="active" onClick={(e) => e.preventDefault()}>
-              {link}
+          link.to === "#" ? (
+            <a key={link.label} href="#" onClick={(e) => e.preventDefault()}>
+              {link.label}
             </a>
-          ) : link === "Logout" ? (
-            <Link key={link} to="/logout">
-              {link}
-            </Link>
           ) : (
-            <a key={link} href="#" onClick={(e) => e.preventDefault()}>
-              {link}
-            </a>
+            <NavLink key={link.label} to={link.to} className={({ isActive }) => (isActive ? "active" : "")}>
+              {link.label}
+            </NavLink>
           )
         )}
       </nav>
