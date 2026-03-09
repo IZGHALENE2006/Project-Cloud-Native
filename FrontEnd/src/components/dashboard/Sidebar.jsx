@@ -1,6 +1,4 @@
 import { NavLink } from "react-router-dom";
-
-function Sidebar() {
   const links = [
     { label: "Dashboard", to: "/dashboard" },
     { label: "Cars", to: "/cars/add" },
@@ -8,10 +6,11 @@ function Sidebar() {
     { label: "Rentals", to: "#" },
     { label: "Logout", to: "/logout" },
   ];
-
+function Sidebar() {
   return (
     <aside className="dashboard-sidebar">
       <h2>CarRent Pro</h2>
+
       <nav>
         {links.map((link) =>
           link.to === "#" ? (
@@ -25,6 +24,7 @@ function Sidebar() {
           )
         )}
       </nav>
+
     </aside>
   );
 }
