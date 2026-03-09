@@ -219,6 +219,116 @@
   background: #2563eb;
 }
 
+.car-card-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.car-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+}
+
+.car-btn.update {
+  background: #2563eb;
+}
+
+.car-btn.delete {
+  background: #dc2626;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 720px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.24);
+}
+
+.modal-card h3 {
+  margin: 0 0 14px;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-field-full {
+  grid-column: 1 / -1;
+}
+
+.modal-field label {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.modal-field input,
+.modal-field select {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.modal-field input:focus,
+.modal-field select:focus {
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.modal-image-preview {
+  margin-top: 8px;
+  width: 100%;
+  max-width: 240px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.modal-error {
+  margin: 0;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
 @media (max-width: 1080px) {
   .dashboard-layout {
     grid-template-columns: 85px 1fr;
@@ -267,6 +377,10 @@
 
   .stats-grid,
   .cars-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-grid {
     grid-template-columns: 1fr;
   }
 }

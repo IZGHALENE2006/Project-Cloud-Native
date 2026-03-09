@@ -1,4 +1,4 @@
-function CarCard({ car }) {
+function CarCard({ car, onUpdate, onDelete }) {
   const statusClass = car.status.toLowerCase().replace(" ", "-");
 
   return (
@@ -10,6 +10,14 @@ function CarCard({ car }) {
         <p>Car Number: {car.carNumber}</p>
         <p>Price/Day: {car.pricePerDay} MAD</p>
         <span className={`status-badge ${statusClass}`}>{car.status}</span>
+        <div className="car-card-actions">
+          <button type="button" className="car-btn update" onClick={onUpdate}>
+            Update
+          </button>
+          <button type="button" className="car-btn delete" onClick={onDelete}>
+            Delete
+          </button>
+        </div>
       </div>
     </article>
   );

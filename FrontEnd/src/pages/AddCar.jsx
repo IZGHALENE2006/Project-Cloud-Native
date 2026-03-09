@@ -4,6 +4,8 @@ import DashboardLayout from "../components/dashboard/DashboardLayout";
 import "../styles/dashboard.css";
 import "../styles/addCar.css";
 
+const CARS_STORAGE_KEY = "carsData";
+
 const initialForm = {
   brand: "",
   model: "",
@@ -65,7 +67,15 @@ function AddCar() {
     return newErrors;
   };
 
-  const handleSubmit = (event) => {
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Failed to read image file."));
+      reader.readAsDataURL(file);
+    });
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setSuccessMessage("");
 
@@ -75,20 +85,34 @@ function AddCar() {
       return;
     }
 
-    const carPayload = {
-      ...formData,
-      imageUrl: `/images/cars/${imageFile.name}`,
-    };
+    try {
+      const imageDataUrl = await fileToDataUrl(imageFile);
+      const carPayload = {
+        id: Date.now(),
+        brand: formData.brand.trim(),
+        model: formData.year ? `${formData.model.trim()} ${formData.year}` : formData.model.trim(),
+        carNumber: formData.registrationNumber.trim(),
+        color: formData.color.trim(),
+        pricePerDay: Number(formData.pricePerDay),
+        status: formData.status,
+        image: imageDataUrl,
+        imagePath: `/images/cars/${imageFile.name}`,
+      };
 
-    console.log("New car data:", carPayload);
-    setSuccessMessage(
-      `Car saved (mock). Put the image file in public/images/cars as ${imageFile.name}.`
-    );
-    setFormData(initialForm);
-    setImageFile(null);
-    setImagePreview("");
-    setFileInputKey((prev) => prev + 1);
-    setErrors({});
+      const savedCars = JSON.parse(localStorage.getItem(CARS_STORAGE_KEY) || "[]");
+      localStorage.setItem(CARS_STORAGE_KEY, JSON.stringify([...savedCars, carPayload]));
+
+      console.log("New car data:", carPayload);
+      setSuccessMessage("Car saved successfully.");
+      setFormData(initialForm);
+      setImageFile(null);
+      setImagePreview("");
+      setFileInputKey((prev) => prev + 1);
+      setErrors({});
+      navigate("/dashboard");
+    } catch (error) {
+      setErrors((prev) => ({ ...prev, imageFile: "Could not process image file." }));
+    }
   };
 
   return (
@@ -180,8 +204,7 @@ function AddCar() {
                 onChange={handleImageChange}
               />
               <small className="hint-text">
-                Selected file will use path:{" "}
-                {imageFile ? `/images/cars/${imageFile.name}` : "/images/cars/your-image.jpg"}
+                Image is saved locally and shown مباشرة ف dashboard.
               </small>
               {errors.imageFile && <small className="error-text">{errors.imageFile}</small>}
               {imagePreview && (
