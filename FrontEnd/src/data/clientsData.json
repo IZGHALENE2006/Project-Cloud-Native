@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "fullName": "Sara Bennani",
+    "phoneNumber": "+212 600 000 001",
+    "licenseNumber": "DL-458921",
+    "cin": "BK123456",
+    "address": "Casablanca, Morocco",
+    "activeRental": null,
+    "canDownloadContract": false,
+    "lastReturn": null
+  }
+]

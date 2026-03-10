@@ -1,0 +1,183 @@
+.add-client-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.add-client-header h1 {
+  margin: 0;
+}
+
+.add-client-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.client-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+}
+
+.client-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.client-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.form-group textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+}
+
+.form-group textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.modal-field textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+}
+
+.modal-field textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.form-group-full {
+  grid-column: 1 / -1;
+}
+
+.client-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.client-table-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.client-table-header span {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.client-table-wrapper {
+  overflow-x: auto;
+}
+
+.client-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.client-table th,
+.client-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: top;
+  font-size: 14px;
+}
+
+.client-table th {
+  color: #334155;
+  background: #f8fafc;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.rent-btn {
+  background: #2563eb;
+}
+
+.update-btn {
+  background: #475569;
+}
+
+.return-btn {
+  background: #f97316;
+}
+
+.contract-btn {
+  background: #0f766e;
+}
+
+.table-btn:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.client-modal {
+  max-width: 620px;
+}
+
+.client-confirmation p {
+  margin: 0 0 18px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+@media (max-width: 960px) {
+  .client-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .client-panel {
+    padding: 16px;
+  }
+
+  .client-table {
+    min-width: 760px;
+  }
+
+  .client-table-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

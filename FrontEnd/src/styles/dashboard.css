@@ -8,6 +8,8 @@
   background: #0f172a;
   color: #e2e8f0;
   padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-sidebar h2 {
@@ -33,6 +35,18 @@
   background: #1e293b;
   color: #ffffff;
   text-decoration: none;
+}
+
+.sidebar-logout {
+  margin-top: auto;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.sidebar-logout:hover,
+.sidebar-logout.active {
+  background: #b91c1c;
+  color: #ffffff;
 }
 
 .dashboard-content {
@@ -364,6 +378,10 @@
   .dashboard-sidebar nav {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+
+  .sidebar-logout {
+    margin-top: 12px;
   }
 
   .dashboard-header-right {

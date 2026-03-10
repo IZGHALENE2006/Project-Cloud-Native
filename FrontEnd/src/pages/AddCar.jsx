@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
+import { getCars, saveCars } from "../data/carsStorage";
 import "../styles/dashboard.css";
 import "../styles/addCar.css";
+<<<<<<< HEAD
 import { Addcar } from "../slices/carSlice";
 import { useDispatch, useSelector } from "react-redux";
+=======
+>>>>>>> 9407cc900caad2eff92f77bb5583897b3ed0dc05
 
 const initialForm = {
   image:"",
@@ -72,6 +76,7 @@ const handleSubmit = async (event) => {
   formDataToSend.append("pricePerDay", formData.pricePerDay);
   formDataToSend.append("status", formData.status);
   formDataToSend.append("year", formData.year);
+      saveCars([...getCars(), carPayload]);
 
   try {
     await dispatch(Addcar(formDataToSend)).unwrap();

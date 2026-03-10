@@ -7,6 +7,7 @@ import AddCar from "./pages/AddCar";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { GetAllCar } from "./slices/carSlice";
+import AddClient from "./pages/AddClient";
 
 function App() {
   const dispatch = useDispatch()
@@ -20,6 +21,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/cars/add" element={<AddCar />} />
+      <Route path="/clients/add" element={<AddClient />} />
       <Route path="/logout" element={<Logout />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

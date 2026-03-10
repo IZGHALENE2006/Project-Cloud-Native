@@ -3,12 +3,19 @@ import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import StatCard from "../components/dashboard/StatCard";
 import CarCard from "../components/dashboard/CarCard";
+<<<<<<< HEAD
 import { Link, useNavigate } from "react-router-dom";
 import { statsData, carsData } from "../data/dashboardData";
 import "../styles/dashboard.css";
 import { useSelector } from "react-redux";
 
 const CARS_STORAGE_KEY = "carsData";
+=======
+import { Link } from "react-router-dom";
+import { statsData } from "../data/dashboardData";
+import { getCars, saveCars } from "../data/carsStorage";
+import "../styles/dashboard.css";
+>>>>>>> 9407cc900caad2eff92f77bb5583897b3ed0dc05
 const initialEditForm = {
   brand: "",
   model: "",
@@ -21,7 +28,7 @@ const initialEditForm = {
 };
 
 function Dashboard() {
-  const [allCars, setAllCars] = useState(carsData);
+  const [allCars, setAllCars] = useState(getCars);
   const [editingCarId, setEditingCarId] = useState(null);
   const [editForm, setEditForm] = useState(initialEditForm);
   const [editImageFile, setEditImageFile] = useState(null);
@@ -30,6 +37,7 @@ function Dashboard() {
   const [editError, setEditError] = useState("");
  const {Token,User} = useSelector((state)=>{return state.auth})
   useEffect(() => {
+<<<<<<< HEAD
     try {
       const storedCtokenars = JSON.parse(localStorage.getItem(CARS_STORAGE_KEY) || "[]");
       if (!Array.isArray(storedCars) || storedCars.length === 0) {
@@ -42,16 +50,19 @@ function Dashboard() {
     } catch (error) {
       console.error("Failed to read cars from storage:", error);
     }
+=======
+    setAllCars(getCars());
+>>>>>>> 9407cc900caad2eff92f77bb5583897b3ed0dc05
   }, []);
 
-  const saveCars = (nextCars) => {
+  const handleSaveCars = (nextCars) => {
     setAllCars(nextCars);
-    localStorage.setItem(CARS_STORAGE_KEY, JSON.stringify(nextCars));
+    saveCars(nextCars);
   };
 
   const handleDeleteCar = (carId) => {
     const nextCars = allCars.filter((car) => car.id !== carId);
-    saveCars(nextCars);
+    handleSaveCars(nextCars);
   };
 
   const handleOpenUpdateModal = (carId) => {
@@ -162,7 +173,7 @@ function Dashboard() {
           }
         : car
     );
-    saveCars(nextCars);
+    handleSaveCars(nextCars);
     handleCloseUpdateModal();
   };
   const navegate = useNavigate()
