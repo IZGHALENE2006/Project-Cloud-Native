@@ -12,27 +12,25 @@ function Login() {
     const {loading,error} = useSelector((state)=>{return state.auth})
   const Dispatch = useDispatch()
   const navigate = useNavigate()
-  const [Error, setError] = useState("");
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  setError("");
-
-
 
 
   try {
     await Dispatch(Loginuser(formData)).unwrap();
-alert("ok")
-  } catch (err) {
-    const message = err?.message || "Failed to send data.";
-    setError(message);
-  }
-};
+      navigate('/dashboard')
+
+}catch(error){
+console.log(error);
+
+}
+
+
+}
 
   return (
     <AuthLayout
@@ -74,5 +72,4 @@ alert("ok")
     </AuthLayout>
   );
 }
-
 export default Login;

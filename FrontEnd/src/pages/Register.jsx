@@ -32,13 +32,13 @@ const handleSubmit = async (e) => {
 
   if (formData.password !== formData.confirmPassword) {
     setError("Passwords do not match.");
-    return;
+    return; 
   }
 
 
   try {
     await Dispatch(RejisterUser(formData)).unwrap();
-     navigate('login')   
+     navigate('/login')   
   } catch (err) {
     const message = err?.message || "Failed to send data.";
     setError(message);

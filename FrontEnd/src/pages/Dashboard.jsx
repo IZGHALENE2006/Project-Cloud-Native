@@ -3,9 +3,10 @@ import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import StatCard from "../components/dashboard/StatCard";
 import CarCard from "../components/dashboard/CarCard";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { statsData, carsData } from "../data/dashboardData";
 import "../styles/dashboard.css";
+import { useSelector } from "react-redux";
 
 const CARS_STORAGE_KEY = "carsData";
 const initialEditForm = {
@@ -27,10 +28,10 @@ function Dashboard() {
   const [editImagePreview, setEditImagePreview] = useState("");
   const [editFileInputKey, setEditFileInputKey] = useState(0);
   const [editError, setEditError] = useState("");
-
+ const {Token,User} = useSelector((state)=>{return state.auth})
   useEffect(() => {
     try {
-      const storedCars = JSON.parse(localStorage.getItem(CARS_STORAGE_KEY) || "[]");
+      const storedCtokenars = JSON.parse(localStorage.getItem(CARS_STORAGE_KEY) || "[]");
       if (!Array.isArray(storedCars) || storedCars.length === 0) {
         return;
       }
@@ -112,6 +113,7 @@ function Dashboard() {
       reader.onerror = () => reject(new Error("Failed to read image file."));
       reader.readAsDataURL(file);
     });
+    
 
   const handleSaveUpdate = async (event) => {
     event.preventDefault();
@@ -163,7 +165,12 @@ function Dashboard() {
     saveCars(nextCars);
     handleCloseUpdateModal();
   };
-
+  const navegate = useNavigate()
+    useEffect(()=>{
+      if(!Token){
+        navegate('/login')
+      }
+    },[Token,User])
   return (
     <DashboardLayout>
       <DashboardHeader />

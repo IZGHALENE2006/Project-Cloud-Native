@@ -4,8 +4,16 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Logout from "./pages/Logout";
 import AddCar from "./pages/AddCar";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { GetAllCar } from "./slices/carSlice";
 
 function App() {
+  const dispatch = useDispatch()
+  // useEffect(()=>{
+  //   const Token = localStorage.getItem('token')
+  //  dispatch(GetAllCar(Token))
+  // },[dispatch])
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

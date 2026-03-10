@@ -5,13 +5,12 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 const initialState = {
   User: null,
   AllUser:[],
-  Token:localStorage.getItem('token') || null,
+  Token: null,
   loading:false,
   error:null
 }
 //Register User
  export const RejisterUser = createAsyncThunk("Register",async(User,{rejectWithValue})=>{
-    console.log(User);
     
     try{
         const res = await axios.post("http://localhost:7000/api/user/Register",User)
@@ -23,6 +22,7 @@ const initialState = {
 
 //login User
  export const Loginuser = createAsyncThunk("Login",async(data,{rejectWithValue})=>{
+    console.log(data);
     
     try{
         const res = await axios.post("http://localhost:7000/api/user/Login",data)

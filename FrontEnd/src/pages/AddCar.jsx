@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import "../styles/dashboard.css";
 import "../styles/addCar.css";
-
-const CARS_STORAGE_KEY = "carsData";
+import { Addcar } from "../slices/carSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 const initialForm = {
+  image:"",
   brand: "",
   model: "",
   registrationNumber: "",
@@ -17,13 +18,13 @@ const initialForm = {
 };
 
 function AddCar() {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState(initialForm);
-  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [fileInputKey, setFileInputKey] = useState(0);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
+  const navigate = useNavigate();
+console.log(FormData);
 
   useEffect(() => {
     return () => {
@@ -31,26 +32,9 @@ function AddCar() {
     };
   }, [imagePreview]);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
 
-  const handleImageChange = (event) => {
-    const file = event.target.files?.[0] || null;
-    setImageFile(file);
-    setErrors((prev) => ({ ...prev, imageFile: "" }));
+const dispatch = useDispatch()
 
-    if (file) {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-      setImagePreview(URL.createObjectURL(file));
-      return;
-    }
-
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview("");
-  };
 
   const validate = () => {
     const newErrors = {};
@@ -67,54 +51,46 @@ function AddCar() {
     return newErrors;
   };
 
-  const fileToDataUrl = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("Failed to read image file."));
-      reader.readAsDataURL(file);
-    });
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setSuccessMessage("");
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  setSuccessMessage("");
 
-    const formErrors = validate();
-    if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
-      return;
-    }
+  const formErrors = validate();
+  if (Object.keys(formErrors).length > 0) {
+    setErrors(formErrors);
+    return;
+  }
 
-    try {
-      const imageDataUrl = await fileToDataUrl(imageFile);
-      const carPayload = {
-        id: Date.now(),
-        brand: formData.brand.trim(),
-        model: formData.year ? `${formData.model.trim()} ${formData.year}` : formData.model.trim(),
-        carNumber: formData.registrationNumber.trim(),
-        color: formData.color.trim(),
-        pricePerDay: Number(formData.pricePerDay),
-        status: formData.status,
-        image: imageDataUrl,
-        imagePath: `/images/cars/${imageFile.name}`,
-      };
+  const formDataToSend = new FormData();
 
-      const savedCars = JSON.parse(localStorage.getItem(CARS_STORAGE_KEY) || "[]");
-      localStorage.setItem(CARS_STORAGE_KEY, JSON.stringify([...savedCars, carPayload]));
+  formDataToSend.append("image", imageFile);
+  formDataToSend.append("brand", formData.brand);
+  formDataToSend.append("model", formData.model);
+  formDataToSend.append("registrationNumber", formData.registrationNumber);
+  formDataToSend.append("color", formData.color);
+  formDataToSend.append("pricePerDay", formData.pricePerDay);
+  formDataToSend.append("status", formData.status);
+  formDataToSend.append("year", formData.year);
 
-      console.log("New car data:", carPayload);
-      setSuccessMessage("Car saved successfully.");
-      setFormData(initialForm);
-      setImageFile(null);
-      setImagePreview("");
-      setFileInputKey((prev) => prev + 1);
-      setErrors({});
-      navigate("/dashboard");
-    } catch (error) {
-      setErrors((prev) => ({ ...prev, imageFile: "Could not process image file." }));
-    }
-  };
+  try {
+    await dispatch(Addcar(formDataToSend)).unwrap();
 
+    setSuccessMessage("Car saved successfully.");
+
+    setFormData(initialForm);
+    setImageFile(null);
+    setImagePreview("");
+    setFileInputKey((prev) => prev + 1);
+    setErrors({});
+
+    navigate("/dashboard");
+
+  } catch (error) {
+console.log(error);
+
+  }
+};
   return (
     <DashboardLayout>
       <section className="add-car-page">
@@ -132,7 +108,7 @@ function AddCar() {
                 name="brand"
                 type="text"
                 value={formData.brand}
-                onChange={handleChange}
+                onChange={(e)=>setFormData({...formData,brand:e.target.value})}
                 placeholder="Toyota"
               />
               {errors.brand && <small className="error-text">{errors.brand}</small>}
@@ -145,7 +121,7 @@ function AddCar() {
                 name="model"
                 type="text"
                 value={formData.model}
-                onChange={handleChange}
+                onChange={(e)=>setFormData({...formData,model:e.target.value})}
                 placeholder="Corolla"
               />
               {errors.model && <small className="error-text">{errors.model}</small>}
@@ -158,7 +134,7 @@ function AddCar() {
                 name="registrationNumber"
                 type="text"
                 value={formData.registrationNumber}
-                onChange={handleChange}
+                onChange={(e)=>setFormData({...formData,registrationNumber:e.target.value})}
                 placeholder="12345-A-6"
               />
               {errors.registrationNumber && (
@@ -173,7 +149,7 @@ function AddCar() {
                 name="color"
                 type="text"
                 value={formData.color}
-                onChange={handleChange}
+                onChange={(e)=>setFormData({...formData,color:e.target.value})}
                 placeholder="White"
               />
               {errors.color && <small className="error-text">{errors.color}</small>}
@@ -187,7 +163,7 @@ function AddCar() {
                 type="number"
                 min="0"
                 value={formData.pricePerDay}
-                onChange={handleChange}
+                onChange={(e)=>setFormData({...formData,pricePerDay:e.target.value})}
                 placeholder="300"
               />
               {errors.pricePerDay && <small className="error-text">{errors.pricePerDay}</small>}
@@ -201,7 +177,7 @@ function AddCar() {
                 key={fileInputKey}
                 type="file"
                 accept="image/*"
-                onChange={handleImageChange}
+                 onChange={(e)=>setFormData({...formData,image:e.target.files[0]})}
               />
               <small className="hint-text">
                 Image is saved locally and shown مباشرة ف dashboard.
@@ -214,7 +190,10 @@ function AddCar() {
 
             <div className="form-group">
               <label htmlFor="status">Status</label>
-              <select id="status" name="status" value={formData.status} onChange={handleChange}>
+              <select id="status" name="status" value={formData.status}
+                onChange={(e)=>setFormData({...formData,status:e.target.value})}
+              
+              >
                 <option value="Available">Available</option>
                 <option value="Rented">Rented</option>
                 <option value="Under Repair">Under Repair</option>
@@ -230,7 +209,7 @@ function AddCar() {
                 min="1980"
                 max="2099"
                 value={formData.year}
-                onChange={handleChange}
+                onChange={(e)=>setFormData({...formData,year:e.target.value})}
                 placeholder="2024"
               />
             </div>
