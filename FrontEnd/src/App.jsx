@@ -4,6 +4,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Logout from "./pages/Logout";
 import AddCar from "./pages/AddCar";
+import AddClient from "./pages/AddClient";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/cars/add" element={<AddCar />} />
+      <Route path="/clients/add" element={<AddClient />} />
       <Route path="/logout" element={<Logout />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

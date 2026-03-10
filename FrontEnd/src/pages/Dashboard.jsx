@@ -4,10 +4,9 @@ import DashboardLayout from "../components/dashboard/DashboardLayout";
 import StatCard from "../components/dashboard/StatCard";
 import CarCard from "../components/dashboard/CarCard";
 import { Link } from "react-router-dom";
-import { statsData, carsData } from "../data/dashboardData";
+import { statsData } from "../data/dashboardData";
+import { getCars, saveCars } from "../data/carsStorage";
 import "../styles/dashboard.css";
-
-const CARS_STORAGE_KEY = "carsData";
 const initialEditForm = {
   brand: "",
   model: "",
@@ -20,7 +19,7 @@ const initialEditForm = {
 };
 
 function Dashboard() {
-  const [allCars, setAllCars] = useState(carsData);
+  const [allCars, setAllCars] = useState(getCars);
   const [editingCarId, setEditingCarId] = useState(null);
   const [editForm, setEditForm] = useState(initialEditForm);
   const [editImageFile, setEditImageFile] = useState(null);
@@ -29,28 +28,17 @@ function Dashboard() {
   const [editError, setEditError] = useState("");
 
   useEffect(() => {
-    try {
-      const storedCars = JSON.parse(localStorage.getItem(CARS_STORAGE_KEY) || "[]");
-      if (!Array.isArray(storedCars) || storedCars.length === 0) {
-        return;
-      }
-
-      const baseIds = new Set(carsData.map((car) => car.id));
-      const hasBaseCars = storedCars.some((car) => baseIds.has(car.id));
-      setAllCars(hasBaseCars ? storedCars : [...carsData, ...storedCars]);
-    } catch (error) {
-      console.error("Failed to read cars from storage:", error);
-    }
+    setAllCars(getCars());
   }, []);
 
-  const saveCars = (nextCars) => {
+  const handleSaveCars = (nextCars) => {
     setAllCars(nextCars);
-    localStorage.setItem(CARS_STORAGE_KEY, JSON.stringify(nextCars));
+    saveCars(nextCars);
   };
 
   const handleDeleteCar = (carId) => {
     const nextCars = allCars.filter((car) => car.id !== carId);
-    saveCars(nextCars);
+    handleSaveCars(nextCars);
   };
 
   const handleOpenUpdateModal = (carId) => {
@@ -160,7 +148,7 @@ function Dashboard() {
           }
         : car
     );
-    saveCars(nextCars);
+    handleSaveCars(nextCars);
     handleCloseUpdateModal();
   };
 

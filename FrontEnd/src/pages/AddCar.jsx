@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
+import { getCars, saveCars } from "../data/carsStorage";
 import "../styles/dashboard.css";
 import "../styles/addCar.css";
-
-const CARS_STORAGE_KEY = "carsData";
 
 const initialForm = {
   brand: "",
@@ -99,8 +98,7 @@ function AddCar() {
         imagePath: `/images/cars/${imageFile.name}`,
       };
 
-      const savedCars = JSON.parse(localStorage.getItem(CARS_STORAGE_KEY) || "[]");
-      localStorage.setItem(CARS_STORAGE_KEY, JSON.stringify([...savedCars, carPayload]));
+      saveCars([...getCars(), carPayload]);
 
       console.log("New car data:", carPayload);
       setSuccessMessage("Car saved successfully.");
