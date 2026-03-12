@@ -1,21 +1,16 @@
 import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
-import StatCard from "../components/dashboard/StatCard";
 import CarCard from "../components/dashboard/CarCard";
-<<<<<<< HEAD
-import { Link, useNavigate } from "react-router-dom";
-import { statsData, carsData } from "../data/dashboardData";
-import "../styles/dashboard.css";
-import { useSelector } from "react-redux";
+import { getCars } from "../data/carsStorage";
 
-const CARS_STORAGE_KEY = "carsData";
-=======
-import { Link } from "react-router-dom";
-import { statsData } from "../data/dashboardData";
-import { getCars, saveCars } from "../data/carsStorage";
+import { DeleteCar, UpdateCar } from "../slices/carSlice"; // افترض slice فيها update/delete
+
 import "../styles/dashboard.css";
->>>>>>> 9407cc900caad2eff92f77bb5583897b3ed0dc05
+
 const initialEditForm = {
   brand: "",
   model: "",
@@ -28,67 +23,48 @@ const initialEditForm = {
 };
 
 function Dashboard() {
-  const [allCars, setAllCars] = useState(getCars);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { Cars } = useSelector((state) => state.Car);
+  const { Token } = useSelector((state) => state.auth);
+
   const [editingCarId, setEditingCarId] = useState(null);
   const [editForm, setEditForm] = useState(initialEditForm);
   const [editImageFile, setEditImageFile] = useState(null);
   const [editImagePreview, setEditImagePreview] = useState("");
   const [editFileInputKey, setEditFileInputKey] = useState(0);
   const [editError, setEditError] = useState("");
- const {Token,User} = useSelector((state)=>{return state.auth})
+
+  // Redirect to login if no token
   useEffect(() => {
-<<<<<<< HEAD
-    try {
-      const storedCtokenars = JSON.parse(localStorage.getItem(CARS_STORAGE_KEY) || "[]");
-      if (!Array.isArray(storedCars) || storedCars.length === 0) {
-        return;
-      }
+    if (!Token) navigate("/login");
+  }, [Token]);
 
-      const baseIds = new Set(carsData.map((car) => car.id));
-      const hasBaseCars = storedCars.some((car) => baseIds.has(car.id));
-      setAllCars(hasBaseCars ? storedCars : [...carsData, ...storedCars]);
-    } catch (error) {
-      console.error("Failed to read cars from storage:", error);
-    }
-=======
-    setAllCars(getCars());
->>>>>>> 9407cc900caad2eff92f77bb5583897b3ed0dc05
-  }, []);
-
-  const handleSaveCars = (nextCars) => {
-    setAllCars(nextCars);
-    saveCars(nextCars);
-  };
-
-  const handleDeleteCar = (carId) => {
-    const nextCars = allCars.filter((car) => car.id !== carId);
-    handleSaveCars(nextCars);
-  };
-
+  // Open Update Modal
   const handleOpenUpdateModal = (carId) => {
-    const currentCar = allCars.find((car) => car.id === carId);
+    const currentCar = Cars.find((car) => car._id === carId);
     if (!currentCar) return;
 
     setEditingCarId(carId);
     setEditForm({
       brand: currentCar.brand || "",
       model: currentCar.model || "",
-      carNumber: currentCar.carNumber || "",
+      carNumber: currentCar.registrationNumber || "",
       color: currentCar.color || "",
       pricePerDay: String(currentCar.pricePerDay ?? ""),
       image: currentCar.image || "",
       status: currentCar.status || "Available",
       year: String(currentCar.year ?? ""),
     });
-    if (editImagePreview.startsWith("blob:")) URL.revokeObjectURL(editImagePreview);
-    setEditImageFile(null);
     setEditImagePreview(currentCar.image || "");
+    setEditImageFile(null);
     setEditFileInputKey((prev) => prev + 1);
     setEditError("");
   };
 
+  // Close modal
   const handleCloseUpdateModal = () => {
-    if (editImagePreview.startsWith("blob:")) URL.revokeObjectURL(editImagePreview);
     setEditingCarId(null);
     setEditForm(initialEditForm);
     setEditImageFile(null);
@@ -96,44 +72,35 @@ function Dashboard() {
     setEditError("");
   };
 
-  const handleEditChange = (event) => {
-    const { name, value } = event.target;
+  // Handle input change
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
     setEditForm((prev) => ({ ...prev, [name]: value }));
     setEditError("");
   };
 
-  const handleEditImageChange = (event) => {
-    const file = event.target.files?.[0] || null;
+  // Handle image file change
+  const handleEditImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
     setEditImageFile(file);
-    setEditError("");
-
-    if (file) {
-      if (editImagePreview.startsWith("blob:")) URL.revokeObjectURL(editImagePreview);
-      setEditImagePreview(URL.createObjectURL(file));
-      return;
-    }
-
-    if (editImagePreview.startsWith("blob:")) URL.revokeObjectURL(editImagePreview);
-    setEditImagePreview(editForm.image || "");
+    const previewUrl = URL.createObjectURL(file);
+    setEditImagePreview(previewUrl);
+    setEditForm((prev) => ({ ...prev, image: file }));
   };
 
-  const fileToDataUrl = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("Failed to read image file."));
-      reader.readAsDataURL(file);
-    });
-    
+  // Handle Update Car submit
+  const handleSaveUpdate = async (e) => {
+    e.preventDefault();
 
-  const handleSaveUpdate = async (event) => {
-    event.preventDefault();
-
+    // Validation
     if (
       !editForm.brand.trim() ||
       !editForm.model.trim() ||
       !editForm.carNumber.trim() ||
-      !editForm.color.trim()
+      !editForm.color.trim() ||
+      !editForm.pricePerDay
     ) {
       setEditError("Please fill all required fields.");
       return;
@@ -146,121 +113,90 @@ function Dashboard() {
     }
 
     const allowedStatuses = ["Available", "Rented", "Under Repair"];
-    const selectedStatus = allowedStatuses.includes(editForm.status) ? editForm.status : "Available";
+    const selectedStatus = allowedStatuses.includes(editForm.status)
+      ? editForm.status
+      : "Available";
 
-    let nextImage = editForm.image;
-    if (editImageFile) {
-      try {
-        nextImage = await fileToDataUrl(editImageFile);
-      } catch (error) {
-        setEditError("Could not process image file.");
-        return;
-      }
+    // Prepare FormData for image upload
+    const formDataToSend = new FormData();
+    formDataToSend.append("brand", editForm.brand.trim());
+    formDataToSend.append("model", editForm.model.trim());
+    formDataToSend.append("registrationNumber", editForm.carNumber.trim());
+    formDataToSend.append("color", editForm.color.trim());
+    formDataToSend.append("pricePerDay", parsedPrice);
+    formDataToSend.append("status", selectedStatus);
+    formDataToSend.append("year", editForm.year ? Number(editForm.year) : "");
+    if (editImageFile) formDataToSend.append("image", editImageFile);
+
+    try {
+      await dispatch(UpdateCar({ id: editingCarId, data: formDataToSend })).unwrap();
+      handleCloseUpdateModal();
+    } catch (err) {
+      setEditError("Failed to update car.");
+      console.log(err);
     }
-
-    const nextCars = allCars.map((car) =>
-      car.id === editingCarId
-        ? {
-            ...car,
-            brand: editForm.brand.trim(),
-            model: editForm.model.trim(),
-            carNumber: editForm.carNumber.trim(),
-            color: editForm.color.trim(),
-            pricePerDay: parsedPrice,
-            image: nextImage,
-            status: selectedStatus,
-            year: editForm.year ? Number(editForm.year) : "",
-          }
-        : car
-    );
-    handleSaveCars(nextCars);
-    handleCloseUpdateModal();
   };
-  const navegate = useNavigate()
-    useEffect(()=>{
-      if(!Token){
-        navegate('/login')
-      }
-    },[Token,User])
+
+  // Handle Delete Car
+  const handleDeleteCar = async (carId) => {
+    if (!window.confirm("Are you sure you want to delete this car?")) return;
+    try {
+      await dispatch(DeleteCar(carId)).unwrap();
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
   return (
     <DashboardLayout>
       <DashboardHeader />
-
-      <section className="stats-grid">
-        {statsData.map((item) => (
-          <StatCard key={item.id} {...item} />
-        ))}
-      </section>
 
       <section className="action-row">
         <Link to="/cars/add" className="btn-primary">
           Add Car
         </Link>
-        <button type="button" className="btn-secondary">
-          Add User
-        </button>
       </section>
 
       <section>
         <h3 className="section-title">Cars</h3>
         <div className="cars-grid">
-          {allCars.map((car) => (
+          {Cars?.map((car) => (
             <CarCard
-              key={car.id}
+              key={car._id}
               car={car}
-              onUpdate={() => handleOpenUpdateModal(car.id)}
-              onDelete={() => handleDeleteCar(car.id)}
+              onUpdate={() => handleOpenUpdateModal(car._id)}
+              onDelete={() => handleDeleteCar(car._id)}
             />
           ))}
         </div>
       </section>
 
-      {editingCarId !== null && (
+      {/* Update Modal */}
+      {editingCarId && (
         <div className="modal-overlay" onClick={handleCloseUpdateModal}>
-          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <h3>Update Car</h3>
             <form className="modal-form" onSubmit={handleSaveUpdate}>
               <div className="modal-grid">
                 <div className="modal-field">
-                  <label htmlFor="editBrand">Car Brand</label>
-                  <input
-                    id="editBrand"
-                    name="brand"
-                    value={editForm.brand}
-                    onChange={handleEditChange}
-                  />
+                  <label>Car Brand</label>
+                  <input name="brand" value={editForm.brand} onChange={handleEditChange} />
                 </div>
                 <div className="modal-field">
-                  <label htmlFor="editModel">Car Model</label>
-                  <input
-                    id="editModel"
-                    name="model"
-                    value={editForm.model}
-                    onChange={handleEditChange}
-                  />
+                  <label>Car Model</label>
+                  <input name="model" value={editForm.model} onChange={handleEditChange} />
                 </div>
                 <div className="modal-field">
-                  <label htmlFor="editCarNumber">Car Number</label>
-                  <input
-                    id="editCarNumber"
-                    name="carNumber"
-                    value={editForm.carNumber}
-                    onChange={handleEditChange}
-                  />
+                  <label>Car Number</label>
+                  <input name="carNumber" value={editForm.carNumber} onChange={handleEditChange} />
                 </div>
                 <div className="modal-field">
-                  <label htmlFor="editColor">Car Color</label>
-                  <input
-                    id="editColor"
-                    name="color"
-                    value={editForm.color}
-                    onChange={handleEditChange}
-                  />
+                  <label>Color</label>
+                  <input name="color" value={editForm.color} onChange={handleEditChange} />
                 </div>
                 <div className="modal-field">
-                  <label htmlFor="editPricePerDay">Price Per Day</label>
+                  <label>Price Per Day</label>
                   <input
-                    id="editPricePerDay"
                     name="pricePerDay"
                     type="number"
                     min="0"
@@ -269,9 +205,8 @@ function Dashboard() {
                   />
                 </div>
                 <div className="modal-field">
-                  <label htmlFor="editYear">Year</label>
+                  <label>Year</label>
                   <input
-                    id="editYear"
                     name="year"
                     type="number"
                     min="1980"
@@ -281,27 +216,20 @@ function Dashboard() {
                   />
                 </div>
                 <div className="modal-field modal-field-full">
-                  <label htmlFor="editImageFile">Car Image File</label>
+                  <label>Car Image</label>
                   <input
-                    id="editImageFile"
-                    name="imageFile"
                     key={editFileInputKey}
                     type="file"
                     accept="image/*"
                     onChange={handleEditImageChange}
                   />
                   {editImagePreview && (
-                    <img className="modal-image-preview" src={editImagePreview} alt="Car preview" />
+                    <img className="modal-image-preview" src={editImagePreview} alt="preview" />
                   )}
                 </div>
                 <div className="modal-field modal-field-full">
-                  <label htmlFor="editStatus">Status</label>
-                  <select
-                    id="editStatus"
-                    name="status"
-                    value={editForm.status}
-                    onChange={handleEditChange}
-                  >
+                  <label>Status</label>
+                  <select name="status" value={editForm.status} onChange={handleEditChange}>
                     <option value="Available">Available</option>
                     <option value="Rented">Rented</option>
                     <option value="Under Repair">Under Repair</option>

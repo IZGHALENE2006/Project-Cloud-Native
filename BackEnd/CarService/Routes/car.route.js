@@ -3,7 +3,7 @@ const route = express.Router()
 
 import { AddCars ,GetCar,DeleteCar,UpdateCar} from '../controlles/cars.js'
 import upload from '../auth/upload.js'
-import { auth } from '../auth/mideleware.js'
+import { auth } from '../mideleware.js' 
 
 // Add Car
 route.post('/Add', auth, upload.single('image'), AddCars)
@@ -15,6 +15,6 @@ route.get('/get', auth, GetCar)
 route.delete('/Delete/:id', auth, DeleteCar)
 
 // Update Car
-route.patch('/Update/:id', auth, UpdateCar)
+route.put('/Update/:id', auth,upload.single('image'), UpdateCar)
 
 export default route

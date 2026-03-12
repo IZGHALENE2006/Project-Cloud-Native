@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import CarRoute from './Routes/car.route.js'
+import ClientRoute from './Routes/Clients.Route.js'
 const app = express();
 
 
@@ -8,9 +8,8 @@ app.use(cors());
 app.use(express.json());
 
 // routes
-app.use("/Car",CarRoute)
+app.use("/Client",ClientRoute)
 
-app.use("/uploads", express.static("uploads"));
 
 
 export default app;

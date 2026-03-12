@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { jsPDF } from "jspdf";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
-import { getCars, saveCars } from "../data/carsStorage";
-import { getClients, saveClients } from "../data/clientsStorage";
+import { AddClient, GetAllClients, UpdateClient, DeleteClient, clearError, clearMessage } from "../slices/ClientSlice";
 import "../styles/dashboard.css";
 import "../styles/addClient.css";
 
 const initialClientForm = {
   fullName: "",
   phoneNumber: "",
-  licenseNumber: "",
-  cin: "",
+  drivingLicenseNumber: "",
+  nationalId: "",
   address: "",
 };
 
@@ -22,46 +22,44 @@ const initialRentalForm = {
   mileage: "",
 };
 
-const initialReturnForm = {
-  returnMileage: "",
-  carCondition: "",
-};
-
-const initialEditClientForm = {
-  fullName: "",
-  phoneNumber: "",
-  licenseNumber: "",
-  cin: "",
-  address: "",
-};
-
-function AddClient() {
+function Clients() {
+  const dispatch = useDispatch();
+  const { clients, loading, error, successMessage } = useSelector((state) => state.client || { clients: [] });
+  
+  // Local states
   const [clientForm, setClientForm] = useState(initialClientForm);
-  const [clients, setClients] = useState(getClients);
-  const [cars, setCars] = useState(getCars);
   const [formErrors, setFormErrors] = useState({});
-  const [rentErrors, setRentErrors] = useState({});
-  const [rentingClientId, setRentingClientId] = useState(null);
-  const [returningClientId, setReturningClientId] = useState(null);
-  const [rentalForm, setRentalForm] = useState(initialRentalForm);
-  const [returnForm, setReturnForm] = useState(initialReturnForm);
-  const [returnErrors, setReturnErrors] = useState({});
   const [editingClientId, setEditingClientId] = useState(null);
-  const [editClientForm, setEditClientForm] = useState(initialEditClientForm);
+  const [editClientForm, setEditClientForm] = useState(initialClientForm);
   const [editErrors, setEditErrors] = useState({});
+  const [rentingClientId, setRentingClientId] = useState(null);
+  const [rentalForm, setRentalForm] = useState(initialRentalForm);
+  const [rentErrors, setRentErrors] = useState({});
+  
+  // Cars state (keep local or move to Redux)
+  const [cars, setCars] = useState([]);
+  
+  // Fetch clients on mount
+  useEffect(() => {
+    dispatch(GetAllClients());
+    // Load cars from localStorage or API
+
+  }, [dispatch]);
+console.log(Clients);
+
+  // Clear messages after 3 seconds
+  useEffect(() => {
+    if (successMessage || error) {
+      const timer = setTimeout(() => {
+        dispatch(clearError());
+        dispatch(clearMessage());
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, error, dispatch]);
 
   const availableCars = cars.filter((car) => car.status === "Available");
-  const rentingClient = clients.find((client) => client.id === rentingClientId);
-  const returningClient = clients.find((client) => client.id === returningClientId);
-  const editingClient = clients.find((client) => client.id === editingClientId);
-
-  const updateClients = (updater) => {
-    setClients((prev) => {
-      const nextClients = typeof updater === "function" ? updater(prev) : updater;
-      saveClients(nextClients);
-      return nextClients;
-    });
-  };
+  const rentingClient = clients.find((client) => client._id === rentingClientId);
 
   const handleClientChange = (event) => {
     const { name, value } = event.target;
@@ -73,6 +71,85 @@ function AddClient() {
     const { name, value } = event.target;
     setEditClientForm((prev) => ({ ...prev, [name]: value }));
     setEditErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const validateClientForm = (form) => {
+    const nextErrors = {};
+    if (!form.fullName?.trim()) nextErrors.fullName = "Full name is required.";
+    if (!form.phoneNumber?.trim()) nextErrors.phoneNumber = "Phone number is required.";
+    if (!form.drivingLicenseNumber?.trim()) nextErrors.drivingLicenseNumber = "Driving license number is required.";
+    if (!form.nationalId?.trim()) nextErrors.nationalId = "National ID / CIN is required.";
+    if (!form.address?.trim()) nextErrors.address = "Address is required.";
+    return nextErrors;
+  };
+
+  const handleAddClient = async (event) => {
+    event.preventDefault();
+    const nextErrors = validateClientForm(clientForm);
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors);
+      return;
+    }
+
+    const result = await dispatch(AddClient(clientForm));
+    if (!result.error) {
+      setClientForm(initialClientForm);
+      setFormErrors({});
+    }
+  };
+
+  const openEditModal = (client) => {
+    setEditingClientId(client._id);
+    setEditClientForm({
+      fullName: client.fullName || "",
+      phoneNumber: client.phoneNumber || "",
+      drivingLicenseNumber: client.drivingLicenseNumber || "",
+      nationalId: client.nationalId || "",
+      address: client.address || "",
+    });
+    setEditErrors({});
+  };
+
+  const closeEditModal = () => {
+    setEditingClientId(null);
+    setEditClientForm(initialClientForm);
+    setEditErrors({});
+  };
+
+  const handleUpdateClient = async (event) => {
+    event.preventDefault();
+    const nextErrors = validateClientForm(editClientForm);
+    if (Object.keys(nextErrors).length > 0) {
+      setEditErrors(nextErrors);
+      return;
+    }
+
+    const result = await dispatch(UpdateClient({ 
+      id: editingClientId, 
+      data: editClientForm 
+    }));
+    
+    if (!result.error) {
+      closeEditModal();
+    }
+  };
+
+  const handleDeleteClient = async (id) => {
+    if (window.confirm("Are you sure you want to delete this client?")) {
+      await dispatch(DeleteClient(id));
+    }
+  };
+
+  const openRentModal = (client) => {
+    setRentingClientId(client._id);
+    setRentalForm(initialRentalForm);
+    setRentErrors({});
+  };
+
+  const closeRentModal = () => {
+    setRentingClientId(null);
+    setRentalForm(initialRentalForm);
+    setRentErrors({});
   };
 
   const handleRentalChange = (event) => {
@@ -87,263 +164,44 @@ function AddClient() {
       setRentErrors((prev) => ({ ...prev, [name]: "", price: "" }));
       return;
     }
-
     setRentalForm((prev) => ({ ...prev, [name]: value }));
     setRentErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const validateClientForm = () => {
-    const nextErrors = {};
-
-    if (!clientForm.fullName.trim()) nextErrors.fullName = "Full name is required.";
-    if (!clientForm.phoneNumber.trim()) nextErrors.phoneNumber = "Phone number is required.";
-    if (!clientForm.licenseNumber.trim()) {
-      nextErrors.licenseNumber = "Driving license number is required.";
-    }
-    if (!clientForm.cin.trim()) nextErrors.cin = "National ID / CIN is required.";
-    if (!clientForm.address.trim()) nextErrors.address = "Address is required.";
-
-    return nextErrors;
-  };
-
-  const validateEditClientForm = () => {
-    const nextErrors = {};
-
-    if (!editClientForm.fullName.trim()) nextErrors.fullName = "Full name is required.";
-    if (!editClientForm.phoneNumber.trim()) nextErrors.phoneNumber = "Phone number is required.";
-    if (!editClientForm.licenseNumber.trim()) {
-      nextErrors.licenseNumber = "Driving license number is required.";
-    }
-    if (!editClientForm.cin.trim()) nextErrors.cin = "National ID / CIN is required.";
-    if (!editClientForm.address.trim()) nextErrors.address = "Address is required.";
-
-    return nextErrors;
-  };
-
   const validateRentalForm = () => {
     const nextErrors = {};
-
     if (!rentalForm.carId) nextErrors.carId = "Please select a car.";
     if (!rentalForm.startDate) nextErrors.startDate = "Start date is required.";
     if (!rentalForm.endDate) nextErrors.endDate = "End date is required.";
     if (!rentalForm.price) nextErrors.price = "Price is required.";
     if (!rentalForm.mileage) nextErrors.mileage = "Mileage is required.";
-
-    if (
-      rentalForm.startDate &&
-      rentalForm.endDate &&
-      new Date(rentalForm.endDate) < new Date(rentalForm.startDate)
-    ) {
+    if (rentalForm.startDate && rentalForm.endDate && 
+        new Date(rentalForm.endDate) < new Date(rentalForm.startDate)) {
       nextErrors.endDate = "End date must be after start date.";
     }
-
-    return nextErrors;
-  };
-
-  const resetClientForm = () => {
-    setClientForm(initialClientForm);
-    setFormErrors({});
-  };
-
-  const handleAddClient = (event) => {
-    event.preventDefault();
-
-    const nextErrors = validateClientForm();
-    if (Object.keys(nextErrors).length > 0) {
-      setFormErrors(nextErrors);
-      return;
-    }
-
-    const newClient = {
-      id: Date.now(),
-      fullName: clientForm.fullName.trim(),
-      phoneNumber: clientForm.phoneNumber.trim(),
-      licenseNumber: clientForm.licenseNumber.trim(),
-      cin: clientForm.cin.trim(),
-      address: clientForm.address.trim(),
-      activeRental: null,
-      canDownloadContract: false,
-      lastReturn: null,
-    };
-
-    updateClients((prev) => [newClient, ...prev]);
-    resetClientForm();
-  };
-
-  const openRentModal = (client) => {
-    setRentingClientId(client.id);
-    setRentalForm(initialRentalForm);
-    setRentErrors({});
-  };
-
-  const openEditModal = (client) => {
-    setEditingClientId(client.id);
-    setEditClientForm({
-      fullName: client.fullName || "",
-      phoneNumber: client.phoneNumber || "",
-      licenseNumber: client.licenseNumber || "",
-      cin: client.cin || "",
-      address: client.address || "",
-    });
-    setEditErrors({});
-  };
-
-  const closeEditModal = () => {
-    setEditingClientId(null);
-    setEditClientForm(initialEditClientForm);
-    setEditErrors({});
-  };
-
-  const closeRentModal = () => {
-    setRentingClientId(null);
-    setRentalForm(initialRentalForm);
-    setRentErrors({});
-  };
-
-  const openReturnModal = (client) => {
-    setReturningClientId(client.id);
-  };
-
-  const closeReturnModal = () => {
-    setReturningClientId(null);
-    setReturnForm(initialReturnForm);
-    setReturnErrors({});
-  };
-
-  const handleReturnChange = (event) => {
-    const { name, value } = event.target;
-    setReturnForm((prev) => ({ ...prev, [name]: value }));
-    setReturnErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const validateReturnForm = () => {
-    const nextErrors = {};
-
-    if (!returnForm.returnMileage) {
-      nextErrors.returnMileage = "Return mileage is required.";
-    }
-
-    if (!returnForm.carCondition.trim()) {
-      nextErrors.carCondition = "Car condition is required.";
-    }
-
     return nextErrors;
   };
 
   const handleConfirmRental = (event) => {
     event.preventDefault();
-
     const nextErrors = validateRentalForm();
     if (Object.keys(nextErrors).length > 0) {
       setRentErrors(nextErrors);
       return;
     }
 
-    const selectedCar = cars.find((car) => String(car.id) === rentalForm.carId);
-    if (!selectedCar) {
-      setRentErrors({ carId: "Selected car is not available anymore." });
-      return;
-    }
-
-    const rentalDetails = {
-      carId: selectedCar.id,
-      carLabel: `${selectedCar.brand} ${selectedCar.model}`,
-      startDate: rentalForm.startDate,
-      endDate: rentalForm.endDate,
-      price: rentalForm.price,
-      mileage: rentalForm.mileage,
-      status: "Active",
-    };
-
-    const nextCars = cars.map((car) =>
-      car.id === selectedCar.id ? { ...car, status: "Rented" } : car
-    );
-
-    setCars(nextCars);
-    saveCars(nextCars);
-    updateClients((prev) =>
-      prev.map((client) =>
-        client.id === rentingClientId
-          ? {
-              ...client,
-              activeRental: rentalDetails,
-              canDownloadContract: true,
-            }
-          : client
-      )
-    );
+    // Implement rental logic here (create rental record)
+    // Update car status, client activeRental, etc.
     closeRentModal();
   };
 
-  const handleUpdateClient = (event) => {
-    event.preventDefault();
-
-    const nextErrors = validateEditClientForm();
-    if (Object.keys(nextErrors).length > 0) {
-      setEditErrors(nextErrors);
-      return;
-    }
-
-    updateClients((prev) =>
-      prev.map((client) =>
-        client.id === editingClientId
-          ? {
-              ...client,
-              fullName: editClientForm.fullName.trim(),
-              phoneNumber: editClientForm.phoneNumber.trim(),
-              licenseNumber: editClientForm.licenseNumber.trim(),
-              cin: editClientForm.cin.trim(),
-              address: editClientForm.address.trim(),
-            }
-          : client
-      )
-    );
-
-    closeEditModal();
-  };
-
-  const handleConfirmReturn = () => {
-    if (!returningClient?.activeRental) {
-      closeReturnModal();
-      return;
-    }
-
-    const nextErrors = validateReturnForm();
-    if (Object.keys(nextErrors).length > 0) {
-      setReturnErrors(nextErrors);
-      return;
-    }
-
-    const nextCars = cars.map((car) =>
-      car.id === returningClient.activeRental.carId ? { ...car, status: "Available" } : car
-    );
-
-    setCars(nextCars);
-    saveCars(nextCars);
-    updateClients((prev) =>
-      prev.map((client) =>
-        client.id === returningClientId
-          ? {
-              ...client,
-              lastReturn: {
-                returnMileage: returnForm.returnMileage,
-                carCondition: returnForm.carCondition.trim(),
-                returnedAt: new Date().toLocaleDateString("fr-MA"),
-              },
-              activeRental: null,
-            }
-          : client
-      )
-    );
-    closeReturnModal();
-  };
-
   const handleDownloadContract = (client) => {
-    if (!client.canDownloadContract || !client.activeRental) return;
-
-    const contractNumber = `CTR-${client.id}-${client.activeRental.carId}`;
+    if (!client.activeRental) return;
+    
+    const contractNumber = `CTR-${client._id}-${client.activeRental.carId}`;
     const generatedAt = new Date().toLocaleDateString("fr-MA");
     const rental = client.activeRental;
+    
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -351,7 +209,6 @@ function AddClient() {
     });
 
     const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 18;
     let cursorY = 20;
 
@@ -361,12 +218,6 @@ function AddClient() {
       pdf.setFont("helvetica", options.bold ? "bold" : "normal");
       pdf.setFontSize(fontSize);
       const lines = pdf.splitTextToSize(text, pageWidth - margin * 2);
-
-      if (cursorY + lines.length * gap > pageHeight - 20) {
-        pdf.addPage();
-        cursorY = 20;
-      }
-
       pdf.text(lines, margin, cursorY);
       cursorY += lines.length * gap;
     };
@@ -384,8 +235,8 @@ function AddClient() {
     addLine("Informations du Client", { bold: true, fontSize: 14, gap: 8 });
     addLine(`Nom complet: ${client.fullName}`);
     addLine(`Telephone: ${client.phoneNumber}`);
-    addLine(`Permis de conduire: ${client.licenseNumber}`);
-    addLine(`CIN: ${client.cin}`);
+    addLine(`Permis de conduire: ${client.drivingLicenseNumber}`);
+    addLine(`CIN: ${client.nationalId}`);
     addLine(`Adresse: ${client.address}`, { gap: 8 });
 
     addLine("Informations de Location", { bold: true, fontSize: 14, gap: 8 });
@@ -397,16 +248,9 @@ function AddClient() {
     addLine(`Statut: ${rental.status}`, { gap: 8 });
 
     addLine("Clauses Principales", { bold: true, fontSize: 14, gap: 8 });
-    addLine(
-      "Le client reconnait avoir recu le vehicule en bon etat apparent et s'engage a le restituer a la date prevue, avec ses documents et accessoires."
-    );
-    addLine(
-      "Le client reste responsable des contraventions, dommages ou frais d'utilisation constates pendant la periode de location selon les conditions appliquees par l'agence."
-    );
-    addLine(
-      "Le present document constitue une simulation de contrat de location au format marocain simplifie, genere depuis l'interface de gestion.",
-      { gap: 10 }
-    );
+    addLine("Le client reconnait avoir recu le vehicule en bon etat apparent et s'engage a le restituer a la date prevue, avec ses documents et accessoires.");
+    addLine("Le client reste responsable des contraventions, dommages ou frais d'utilisation constates pendant la periode de location selon les conditions appliquees par l'agence.");
+    addLine("Le present document constitue une simulation de contrat de location au format marocain simplifie, genere depuis l'interface de gestion.", { gap: 10 });
 
     cursorY += 12;
     pdf.line(margin, cursorY, margin + 65, cursorY);
@@ -423,11 +267,24 @@ function AddClient() {
   return (
     <DashboardLayout>
       <section className="add-client-page">
+        {/* Alerts */}
+        {error && (
+          <div className="alert alert-error" style={{background: '#fee2e2', color: '#dc2626', padding: '12px', borderRadius: '8px', marginBottom: '16px'}}>
+            {error}
+          </div>
+        )}
+        {successMessage && (
+          <div className="alert alert-success" style={{background: '#dcfce7', color: '#16a34a', padding: '12px', borderRadius: '8px', marginBottom: '16px'}}>
+            {successMessage}
+          </div>
+        )}
+
         <div className="add-client-header">
-          <h1>Add Client</h1>
-          <p>Create client records and manage simple rental actions from one page.</p>
+          <h1>Clients Management</h1>
+          <p>Create client records and manage rentals from one page.</p>
         </div>
 
+        {/* Add Client Form */}
         <div className="client-panel">
           <form className="client-form" onSubmit={handleAddClient}>
             <div className="client-form-grid">
@@ -454,37 +311,33 @@ function AddClient() {
                   onChange={handleClientChange}
                   placeholder="+212 600 000 000"
                 />
-                {formErrors.phoneNumber && (
-                  <small className="error-text">{formErrors.phoneNumber}</small>
-                )}
+                {formErrors.phoneNumber && <small className="error-text">{formErrors.phoneNumber}</small>}
               </div>
 
               <div className="form-group">
-                <label htmlFor="licenseNumber">Driving License Number</label>
+                <label htmlFor="drivingLicenseNumber">Driving License Number</label>
                 <input
-                  id="licenseNumber"
-                  name="licenseNumber"
+                  id="drivingLicenseNumber"
+                  name="drivingLicenseNumber"
                   type="text"
-                  value={clientForm.licenseNumber}
+                  value={clientForm.drivingLicenseNumber}
                   onChange={handleClientChange}
                   placeholder="DL-123456"
                 />
-                {formErrors.licenseNumber && (
-                  <small className="error-text">{formErrors.licenseNumber}</small>
-                )}
+                {formErrors.drivingLicenseNumber && <small className="error-text">{formErrors.drivingLicenseNumber}</small>}
               </div>
 
               <div className="form-group">
-                <label htmlFor="cin">National ID / CIN</label>
+                <label htmlFor="nationalId">National ID / CIN</label>
                 <input
-                  id="cin"
-                  name="cin"
+                  id="nationalId"
+                  name="nationalId"
                   type="text"
-                  value={clientForm.cin}
+                  value={clientForm.nationalId}
                   onChange={handleClientChange}
                   placeholder="AB123456"
                 />
-                {formErrors.cin && <small className="error-text">{formErrors.cin}</small>}
+                {formErrors.nationalId && <small className="error-text">{formErrors.nationalId}</small>}
               </div>
 
               <div className="form-group form-group-full">
@@ -502,20 +355,21 @@ function AddClient() {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn-primary">
-                Add Client
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Adding...' : 'Add Client'}
               </button>
-              <button type="button" className="btn-secondary" onClick={resetClientForm}>
+              <button type="button" className="btn-secondary" onClick={() => setClientForm(initialClientForm)}>
                 Clear
               </button>
             </div>
           </form>
         </div>
 
+        {/* Clients List */}
         <div className="client-panel">
           <div className="client-table-header">
             <h2>Client List</h2>
-            <span>{clients.length} client(s)</span>
+            <span>{clients?.length || 0} client(s)</span>
           </div>
 
           <div className="client-table-wrapper">
@@ -524,170 +378,79 @@ function AddClient() {
                 <tr>
                   <th>Full Name</th>
                   <th>Phone Number</th>
-                  <th>Driving License Number</th>
+                  <th>License Number</th>
                   <th>CIN</th>
                   <th>Address</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {clients.map((client) => (
-                  <tr key={client.id}>
-                    <td>{client.fullName}</td>
-                    <td>{client.phoneNumber}</td>
-                    <td>{client.licenseNumber}</td>
-                    <td>{client.cin}</td>
-                    <td>{client.address}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button
-                          type="button"
-                          className="table-btn update-btn"
-                          onClick={() => openEditModal(client)}
-                        >
-                          Update
-                        </button>
-                        <button
-                          type="button"
-                          className="table-btn rent-btn"
-                          onClick={() => openRentModal(client)}
-                          disabled={Boolean(client.activeRental)}
-                        >
-                          Rent Car
-                        </button>
-                        <button
-                          type="button"
-                          className="table-btn return-btn"
-                          onClick={() => openReturnModal(client)}
-                          disabled={!client.activeRental}
-                        >
-                          Return Car
-                        </button>
-                        <button
-                          type="button"
-                          className="table-btn contract-btn"
-                          onClick={() => handleDownloadContract(client)}
-                          disabled={!client.canDownloadContract || !client.activeRental}
-                        >
-                          Download Contract
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {loading ? (
+                  <tr><td colSpan="6" style={{textAlign: 'center'}}>Loading...</td></tr>
+                ) : clients?.length === 0 ? (
+                  <tr><td colSpan="6" style={{textAlign: 'center'}}>No clients found</td></tr>
+                ) : (
+                  clients.map((client) => (
+                    <tr key={client._id}>
+                      <td>{client.fullName}</td>
+                      <td>{client.phoneNumber}</td>
+                      <td>{client.drivingLicenseNumber}</td>
+                      <td>{client.nationalId}</td>
+                      <td>{client.address}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button
+                            type="button"
+                            className="table-btn update-btn"
+                            onClick={() => openEditModal(client)}
+                          >
+                            Update
+                          </button>
+                          <button
+                            type="button"
+                            className="table-btn rent-btn"
+                            onClick={() => openRentModal(client)}
+                            disabled={Boolean(client.activeRental)}
+                          >
+                            Rent Car
+                          </button>
+                          <button
+                            type="button"
+                            className="table-btn contract-btn"
+                            onClick={() => handleDownloadContract(client)}
+                            disabled={!client.activeRental}
+                          >
+                            Contract
+                          </button>
+                          <button
+                            type="button"
+                            className="table-btn delete-btn"
+                            onClick={() => handleDeleteClient(client._id)}
+                            style={{background: '#dc2626', color: 'white'}}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </section>
 
-      {rentingClient && (
-        <div className="modal-overlay" onClick={closeRentModal}>
-          <div className="modal-card client-modal" onClick={(event) => event.stopPropagation()}>
-            <h3>Rent Car</h3>
-            <form className="modal-form" onSubmit={handleConfirmRental}>
-              <div className="modal-grid">
-                <div className="modal-field">
-                  <label htmlFor="carId">Select Car</label>
-                  <select
-                    id="carId"
-                    name="carId"
-                    value={rentalForm.carId}
-                    onChange={handleRentalChange}
-                    disabled={availableCars.length === 0}
-                  >
-                    <option value="">
-                      {availableCars.length === 0 ? "No available cars" : "Choose a car"}
-                    </option>
-                    {availableCars.map((car) => (
-                      <option key={car.id} value={car.id}>
-                        {car.brand} {car.model} - {car.carNumber} - {car.pricePerDay} MAD/day
-                      </option>
-                    ))}
-                  </select>
-                  {rentErrors.carId && <small className="error-text">{rentErrors.carId}</small>}
-                </div>
-
-                <div className="modal-field">
-                  <label htmlFor="price">Price</label>
-                  <input
-                    id="price"
-                    name="price"
-                    type="number"
-                    min="0"
-                    value={rentalForm.price}
-                    onChange={handleRentalChange}
-                    placeholder="500"
-                  />
-                  {rentErrors.price && <small className="error-text">{rentErrors.price}</small>}
-                </div>
-
-                <div className="modal-field">
-                  <label htmlFor="mileage">Mileage</label>
-                  <input
-                    id="mileage"
-                    name="mileage"
-                    type="number"
-                    min="0"
-                    value={rentalForm.mileage}
-                    onChange={handleRentalChange}
-                    placeholder="12000"
-                  />
-                  {rentErrors.mileage && (
-                    <small className="error-text">{rentErrors.mileage}</small>
-                  )}
-                </div>
-
-                <div className="modal-field">
-                  <label htmlFor="startDate">Rental Start Date</label>
-                  <input
-                    id="startDate"
-                    name="startDate"
-                    type="date"
-                    value={rentalForm.startDate}
-                    onChange={handleRentalChange}
-                  />
-                  {rentErrors.startDate && (
-                    <small className="error-text">{rentErrors.startDate}</small>
-                  )}
-                </div>
-
-                <div className="modal-field">
-                  <label htmlFor="endDate">Rental End Date</label>
-                  <input
-                    id="endDate"
-                    name="endDate"
-                    type="date"
-                    value={rentalForm.endDate}
-                    onChange={handleRentalChange}
-                  />
-                  {rentErrors.endDate && <small className="error-text">{rentErrors.endDate}</small>}
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button type="submit" className="btn-primary">
-                  Confirm Rental
-                </button>
-                <button type="button" className="btn-secondary" onClick={closeRentModal}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {editingClient && (
+      {/* Edit Modal */}
+      {editingClientId && (
         <div className="modal-overlay" onClick={closeEditModal}>
-          <div className="modal-card client-modal" onClick={(event) => event.stopPropagation()}>
+          <div className="modal-card client-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Update Client</h3>
             <form className="modal-form" onSubmit={handleUpdateClient}>
               <div className="modal-grid">
                 <div className="modal-field">
-                  <label htmlFor="editFullName">Full Name</label>
+                  <label>Full Name</label>
                   <input
-                    id="editFullName"
                     name="fullName"
                     type="text"
                     value={editClientForm.fullName}
@@ -697,49 +460,41 @@ function AddClient() {
                 </div>
 
                 <div className="modal-field">
-                  <label htmlFor="editPhoneNumber">Phone Number</label>
+                  <label>Phone Number</label>
                   <input
-                    id="editPhoneNumber"
                     name="phoneNumber"
                     type="text"
                     value={editClientForm.phoneNumber}
                     onChange={handleEditClientChange}
                   />
-                  {editErrors.phoneNumber && (
-                    <small className="error-text">{editErrors.phoneNumber}</small>
-                  )}
+                  {editErrors.phoneNumber && <small className="error-text">{editErrors.phoneNumber}</small>}
                 </div>
 
                 <div className="modal-field">
-                  <label htmlFor="editLicenseNumber">Driving License Number</label>
+                  <label>License Number</label>
                   <input
-                    id="editLicenseNumber"
-                    name="licenseNumber"
+                    name="drivingLicenseNumber"
                     type="text"
-                    value={editClientForm.licenseNumber}
+                    value={editClientForm.drivingLicenseNumber}
                     onChange={handleEditClientChange}
                   />
-                  {editErrors.licenseNumber && (
-                    <small className="error-text">{editErrors.licenseNumber}</small>
-                  )}
+                  {editErrors.drivingLicenseNumber && <small className="error-text">{editErrors.drivingLicenseNumber}</small>}
                 </div>
 
                 <div className="modal-field">
-                  <label htmlFor="editCin">National ID / CIN</label>
+                  <label>National ID / CIN</label>
                   <input
-                    id="editCin"
-                    name="cin"
+                    name="nationalId"
                     type="text"
-                    value={editClientForm.cin}
+                    value={editClientForm.nationalId}
                     onChange={handleEditClientChange}
                   />
-                  {editErrors.cin && <small className="error-text">{editErrors.cin}</small>}
+                  {editErrors.nationalId && <small className="error-text">{editErrors.nationalId}</small>}
                 </div>
 
                 <div className="modal-field modal-field-full">
-                  <label htmlFor="editAddress">Address</label>
+                  <label>Address</label>
                   <textarea
-                    id="editAddress"
                     name="address"
                     rows="4"
                     value={editClientForm.address}
@@ -750,8 +505,8 @@ function AddClient() {
               </div>
 
               <div className="modal-actions">
-                <button type="submit" className="btn-primary">
-                  Save Changes
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button type="button" className="btn-secondary" onClick={closeEditModal}>
                   Cancel
@@ -762,59 +517,84 @@ function AddClient() {
         </div>
       )}
 
-      {returningClient && (
-        <div className="modal-overlay" onClick={closeReturnModal}>
-          <div
-            className="modal-card client-modal client-confirmation"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h3>Return Car</h3>
-            <p>
-              Confirm the return for <strong>{returningClient.fullName}</strong>
-              {returningClient.activeRental ? ` and mark ${returningClient.activeRental.carLabel} as available.` : "."}
-            </p>
-            <div className="modal-form">
+      {/* Rent Modal */}
+      {rentingClientId && (
+        <div className="modal-overlay" onClick={closeRentModal}>
+          <div className="modal-card client-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Rent Car - {rentingClient?.fullName}</h3>
+            <form className="modal-form" onSubmit={handleConfirmRental}>
               <div className="modal-grid">
                 <div className="modal-field">
-                  <label htmlFor="returnMileage">Return Mileage</label>
-                  <input
-                    id="returnMileage"
-                    name="returnMileage"
-                    type="number"
-                    min="0"
-                    value={returnForm.returnMileage}
-                    onChange={handleReturnChange}
-                    placeholder="12540"
-                  />
-                  {returnErrors.returnMileage && (
-                    <small className="error-text">{returnErrors.returnMileage}</small>
-                  )}
+                  <label>Select Car</label>
+                  <select
+                    name="carId"
+                    value={rentalForm.carId}
+                    onChange={handleRentalChange}
+                  >
+                    <option value="">Choose a car</option>
+                    {availableCars.map((car) => (
+                      <option key={car.id} value={car.id}>
+                        {car.brand} {car.model} - {car.pricePerDay} MAD/day
+                      </option>
+                    ))}
+                  </select>
+                  {rentErrors.carId && <small className="error-text">{rentErrors.carId}</small>}
                 </div>
 
-                <div className="modal-field modal-field-full">
-                  <label htmlFor="carCondition">Car Condition</label>
-                  <textarea
-                    id="carCondition"
-                    name="carCondition"
-                    rows="4"
-                    value={returnForm.carCondition}
-                    onChange={handleReturnChange}
-                    placeholder="Write any issue, damage, or note about the returned car"
+                <div className="modal-field">
+                  <label>Price (MAD)</label>
+                  <input
+                    name="price"
+                    type="number"
+                    value={rentalForm.price}
+                    onChange={handleRentalChange}
+                    placeholder="500"
                   />
-                  {returnErrors.carCondition && (
-                    <small className="error-text">{returnErrors.carCondition}</small>
-                  )}
+                  {rentErrors.price && <small className="error-text">{rentErrors.price}</small>}
+                </div>
+
+                <div className="modal-field">
+                  <label>Mileage (km)</label>
+                  <input
+                    name="mileage"
+                    type="number"
+                    value={rentalForm.mileage}
+                    onChange={handleRentalChange}
+                    placeholder="12000"
+                  />
+                  {rentErrors.mileage && <small className="error-text">{rentErrors.mileage}</small>}
+                </div>
+
+                <div className="modal-field">
+                  <label>Start Date</label>
+                  <input
+                    name="startDate"
+                    type="date"
+                    value={rentalForm.startDate}
+                    onChange={handleRentalChange}
+                  />
+                  {rentErrors.startDate && <small className="error-text">{rentErrors.startDate}</small>}
+                </div>
+
+                <div className="modal-field">
+                  <label>End Date</label>
+                  <input
+                    name="endDate"
+                    type="date"
+                    value={rentalForm.endDate}
+                    onChange={handleRentalChange}
+                  />
+                  {rentErrors.endDate && <small className="error-text">{rentErrors.endDate}</small>}
                 </div>
               </div>
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn-primary" onClick={handleConfirmReturn}>
-                Confirm Return
-              </button>
-              <button type="button" className="btn-secondary" onClick={closeReturnModal}>
-                Cancel
-              </button>
-            </div>
+
+              <div className="modal-actions">
+                <button type="submit" className="btn-primary">Confirm Rental</button>
+                <button type="button" className="btn-secondary" onClick={closeRentModal}>
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -822,4 +602,4 @@ function AddClient() {
   );
 }
 
-export default AddClient;
+export default Clients;

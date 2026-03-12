@@ -3,7 +3,7 @@ function CarCard({ car, onUpdate, onDelete }) {
 
   return (
     <article className="car-card">
-      <img src={car.image} alt={car.model} />
+      <img src={`http://localhost:1000/uploads/${car.image}`} alt={car.model} />
       <div className="car-card-body">
         <h4>{car.model}</h4>
         <p>Brand: {car.brand}</p>

@@ -5,7 +5,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 const initialState = {
   User: null,
   AllUser:[],
-  Token: null,
+  Token: localStorage.getItem("token") || null,
   loading:false,
   error:null
 }

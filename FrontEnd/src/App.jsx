@@ -11,10 +11,10 @@ import AddClient from "./pages/AddClient";
 
 function App() {
   const dispatch = useDispatch()
-  // useEffect(()=>{
-  //   const Token = localStorage.getItem('token')
-  //  dispatch(GetAllCar(Token))
-  // },[dispatch])
+  useEffect(()=>{
+   dispatch(GetAllCar())
+  },[dispatch])
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

@@ -32,3 +32,12 @@ if (existEmail) {
     res.status(500).json(error.message)
  }
 }
+
+//All Admins
+
+export const AllAdmins = async(req,res)=>{
+    const AllAdmins = await AdminModele.find()
+    if(!AllAdmins) return res.status(404).json({message:"Not Found Users"})
+      res.json(AllAdmins)  
+
+}
